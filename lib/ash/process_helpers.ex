@@ -14,6 +14,16 @@ defmodule Ash.ProcessHelpers do
     actor = Process.get(:ash_actor)
     authorize? = Process.get(:ash_authorize?)
     tenant = Process.get(:ash_tenant)
+
+    dynamic_repo =
+      case context[:dynamic_repo_module] do
+        module when is_atom(module) ->
+          {module, module.get_dynamic_repo()}
+
+          _ ->
+          nil
+      end
+
     tracer = Process.get(:ash_tracer)
 
     tracer_context =
@@ -28,6 +38,7 @@ defmodule Ash.ProcessHelpers do
       context: context,
       actor: actor,
       tenant: tenant,
+      dynamic_repo: dynamic_repo,
       authorize?: authorize?,
       tracer: tracer,
       tracer_context: tracer_context
@@ -40,6 +51,7 @@ defmodule Ash.ProcessHelpers do
           context: context,
           actor: actor,
           tenant: tenant,
+          dynamic_repo: dynamic_repo,
           authorize?: authorize?,
           tracer: tracer,
           tracer_context: tracer_context
@@ -57,6 +69,14 @@ defmodule Ash.ProcessHelpers do
     case tenant do
       {:tenant, tenant} ->
         Ash.set_tenant(tenant)
+
+      _ ->
+        :ok
+    end
+
+    case dynamic_repo do
+      {dynamic_repo_module, dynamic_repo} ->
+        dynamic_repo_module.put_dynamic_repo(dynamic_repo)
 
       _ ->
         :ok
